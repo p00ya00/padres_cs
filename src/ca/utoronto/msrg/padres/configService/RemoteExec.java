@@ -5,14 +5,14 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
-import schema.*;
+import ca.utoronto.msrg.padres.configService.schema.*;
 
 import com.jcraft.jsch.*;
 
 /*
  * TO DO:
  * - return output of remote execution
- * - get padres path from environment variable
+ * - get PADRES path from environment variable
  * - recognize host OS type to handle Linux/Windows path format
  * - if possible, replace thread sleep with waiting for command to finish execution
  */
@@ -56,9 +56,9 @@ public class RemoteExec {
 		command += "/bin/startbroker ";
 		command += "-uri " + broker.getType() + "://" + broker.getHost() + ":" +
 		           broker.getPort() + "/" + broker.getName() + " ";
-		if(broker.getConfiguration() != null)
+		if(broker.getParams().getParam() != null)
 		{
-			for(Param p : broker.getConfiguration().getParam())
+			for(Param p : broker.getParams().getParam())
 			{
 				command += "-" + p.getName() + " " + p.getValue() + " ";
 			}
