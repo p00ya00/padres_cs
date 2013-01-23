@@ -14,7 +14,7 @@ import ca.utoronto.msrg.padres.common.message.parser.ParseException;
 import ca.utoronto.msrg.padres.common.util.CommandLine;
 
 public class CLIClient extends Client {
-//comment
+
 	public static final String ANSI_CLS;
 
 	public static final String ANSI_NORMAL;
