@@ -1,16 +1,16 @@
 package p00ya.test.rmi;
 
-import java.io.Serializable;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
-public class RClient implements RClientI, Serializable
+public class RClient implements RClientI
 {
 	public RClient(String id, String address)
 	{
@@ -27,7 +27,8 @@ public class RClient implements RClientI, Serializable
 		try {
 			registry = LocateRegistry.getRegistry();
 			RecSysI recSysStub = (RecSysI) registry.lookup("RecoverySystem");
-			recSysStub.registerClient(this);
+			RClientI clientStub = (RClientI)UnicastRemoteObject.exportObject(this, 0);
+			recSysStub.registerClient(clientStub);
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

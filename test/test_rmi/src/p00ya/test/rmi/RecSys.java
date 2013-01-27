@@ -38,8 +38,9 @@ public class RecSys implements RecSysI
 	@Override
 	public void registerClient(RClientI client) throws RemoteException 
 	{
-		RClientI clientStub = (RClientI)UnicastRemoteObject.exportObject(client, 0);
-		clients.add(clientStub);
+		//RClientI clientStub = (RClientI)UnicastRemoteObject.exportObject(client, 0);
+		//clients.add(clientStub);
+		clients.add(client);
 		System.out.println("Client " + client.toString() + "registered itself!!");
 	}
 	
