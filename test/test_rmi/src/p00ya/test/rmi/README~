@@ -1,0 +1,4 @@
+1. cd src/
+2. javac p00ya/test/rmi/*.java
+3. run rmiregistry (working directory should also be src/)
+4. java -classpath . -Djava.rmi.server.codebase=file:./ p00ya.test.rmi.RecSys

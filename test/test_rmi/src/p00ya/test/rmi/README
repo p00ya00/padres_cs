@@ -1,0 +1,8 @@
+1. cd src/
+2. javac p00ya/test/rmi/*.java
+[in new terminal run RMI registry]
+3. run rmiregistry (working directory should also be src/)
+[in new terminal run server]
+4. java -classpath . -Djava.rmi.server.codebase=file:./ p00ya.test.rmi.RecSys
+[in new terminal run client]
+5. java p00ya.test.rmi.RClient
