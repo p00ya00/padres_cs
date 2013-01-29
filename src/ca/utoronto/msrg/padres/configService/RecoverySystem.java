@@ -1,13 +1,19 @@
 package ca.utoronto.msrg.padres.configService;
 
+import RecSys;
+import RecSysI;
+
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -20,26 +26,24 @@ import ca.utoronto.msrg.padres.common.message.PublicationMessage;
 import ca.utoronto.msrg.padres.common.message.parser.MessageFactory;
 import ca.utoronto.msrg.padres.common.message.parser.ParseException;
 
-public class RecoverySystem extends Client {
+public class RecoverySystem extends Client implements IRecoverySys {
 
 	private Publication pub;
 	private Map<String, Serializable> header;
 	private String msgType, failureBrokerID;
-	private Set<String> clients;
+	// stub of clients
+	private List<CSClient> registeredClients = new ArrayList<CSClient>();
 
 	public RecoverySystem(String id) throws ClientException {
 		super(id);
 	}
 
-	public RecoverySystem(String id, String brokerURI) throws ClientException,
-			ParseException {
+	public RecoverySystem(String id, String brokerURI) throws ClientException, ParseException {
 		super(id);
-
 		connect(brokerURI);
 		publishGlobalFD();
 		subscribeToHeartbeats();
-
-		clients = new HashSet<String>();
+		exportToRegistry();
 		System.out.println("RecoverySystem has started...");
 	}
 
@@ -58,13 +62,6 @@ public class RecoverySystem extends Client {
 				+ "[detectedID,isPresent,'TEXT']," + "[type,isPresent,'TEXT']"));
 	}
 	
-//	private void resubscribeAll(){
-//		
-//	}
-//	
-//	private void reAdvartiseAll(){
-//		
-//	}
 
 	@Override
 	public void processMessage(Message msg) {
@@ -81,6 +78,8 @@ public class RecoverySystem extends Client {
 				failureBrokerID = header.get("detectedID").toString();
 				// try to restart failed node
 				restartBroker(failureBrokerID);
+				readvertiseAll();
+				resubscribeAll();
 				System.out.println("failureBrokerID: " + failureBrokerID);
 			}
 		}
@@ -96,4 +95,53 @@ public class RecoverySystem extends Client {
 		// get broker from the pool and replace old one with the taken one
 	}
 
+	@Override
+	public void registerClient(CSClient client) throws RemoteException {
+		registeredClients.add(client);
+	}
+
+	@Override
+	public void deregisterClient(CSClient client) throws RemoteException {
+		registeredClients.remove(client);
+	}
+	
+	public void readvertiseAll()
+	{
+		for(CSClient client: registeredClients)
+			try {
+				client.resendAdvertisements();
+			} catch (Exception e)
+			{
+				System.err.println("Client cannot readvertise!");
+				e.printStackTrace();
+			}
+	}
+	
+	public void resubscribeAll()
+	{
+		for(CSClient client: registeredClients)
+			try {
+				client.resendSubscriptions();
+			} catch (Exception e)
+			{
+				System.err.println("Client cannot resubscribe!");
+				e.printStackTrace();
+			}
+	}
+	
+	protected void exportToRegistry()
+	{
+		try 
+		{
+			IRecoverySys recSysStub = (IRecoverySys)UnicastRemoteObject.exportObject(this, 0);
+			Registry registry = LocateRegistry.getRegistry();
+			registry.bind("RecoverySystem", recSysStub);
+	        System.err.println("Recovery system added to registry!");
+		} 
+		catch (Exception e) 
+		{
+			System.err.println("Cannot register recovery service in registry!");
+			e.printStackTrace();
+		}
+	}
 }
