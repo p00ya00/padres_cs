@@ -11,6 +11,7 @@ package ca.utoronto.msrg.padres.configService.schema;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
 
@@ -35,10 +36,11 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "config", propOrder = {
-    "topology",
-    "backup"
-})
+//@XmlType(name = "config", propOrder = {
+//    "topology",
+//    "backup"
+//})
+@XmlRootElement(name = "config")
 public class Config {
 
     @XmlElement(required = true)

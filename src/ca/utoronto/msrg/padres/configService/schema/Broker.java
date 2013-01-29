@@ -5,7 +5,6 @@
 // Generated on: 2013.01.22 at 03:51:15 PM CET 
 //
 
-
 package ca.utoronto.msrg.padres.configService.schema;
 
 import javax.xml.bind.annotation.XmlAccessType;
@@ -14,11 +13,13 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 
-
 /**
- * <p>Java class for broker complex type.
+ * <p>
+ * Java class for broker complex type.
  * 
- * <p>The following schema fragment specifies the expected content contained within this class.
+ * <p>
+ * The following schema fragment specifies the expected content contained within
+ * this class.
  * 
  * <pre>
  * &lt;complexType name="broker">
@@ -42,215 +43,192 @@ import javax.xml.bind.annotation.XmlType;
  * 
  */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "broker", propOrder = {
-    "type",
-    "params",
-    "host",
-    "port",
-    "username",
-    "password",
-    "neighbours"
-})
+@XmlType(name = "broker", propOrder = { "type", "params", "host", "port",
+		"username", "password", "neighbours" })
 public class Broker {
 
-    @XmlElement(required = true)
-    protected String type;
-    @XmlElement(required = true)
-    protected Params params;
-    @XmlElement(required = true)
-    protected String host;
-    protected int port;
-    @XmlElement(required = true)
-    protected String username;
-    @XmlElement(required = true)
-    protected String password;
-    @XmlElement(required = true)
-    protected Neighbours neighbours;
-    @XmlAttribute
-    protected String name;
+	@XmlElement(required = true)
+	protected String type;
+	@XmlElement(required = true)
+	protected Params params;
+	@XmlElement(required = true)
+	protected String host;
+	protected int port;
+	@XmlElement(required = true)
+	protected String username;
+	@XmlElement(required = true)
+	protected String password;
+	@XmlElement(required = true)
+	protected Neighbours neighbours;
+	@XmlAttribute
+	protected String name;
 
-    /**
-     * Gets the value of the type property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getType() {
-        return type;
-    }
+	/**
+	 * Gets the value of the type property.
+	 * 
+	 * @return possible object is {@link String }
+	 * 
+	 */
+	public String getType() {
+		return type;
+	}
 
-    /**
-     * Sets the value of the type property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setType(String value) {
-        this.type = value;
-    }
+	/**
+	 * Sets the value of the type property.
+	 * 
+	 * @param value
+	 *            allowed object is {@link String }
+	 * 
+	 */
+	public void setType(String value) {
+		this.type = value;
+	}
 
-    /**
-     * Gets the value of the params property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Params }
-     *     
-     */
-    public Params getParams() {
-        return params;
-    }
+	/**
+	 * Gets the value of the params property.
+	 * 
+	 * @return possible object is {@link Params }
+	 * 
+	 */
+	public Params getParams() {
+		return params;
+	}
 
-    /**
-     * Sets the value of the params property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Params }
-     *     
-     */
-    public void setParams(Params value) {
-        this.params = value;
-    }
+	/**
+	 * Sets the value of the params property.
+	 * 
+	 * @param value
+	 *            allowed object is {@link Params }
+	 * 
+	 */
+	public void setParams(Params value) {
+		this.params = value;
+	}
 
-    /**
-     * Gets the value of the host property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getHost() {
-        return host;
-    }
+	/**
+	 * Gets the value of the host property.
+	 * 
+	 * @return possible object is {@link String }
+	 * 
+	 */
+	public String getHost() {
+		return host;
+	}
 
-    /**
-     * Sets the value of the host property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setHost(String value) {
-        this.host = value;
-    }
+	/**
+	 * Sets the value of the host property.
+	 * 
+	 * @param value
+	 *            allowed object is {@link String }
+	 * 
+	 */
+	public void setHost(String value) {
+		this.host = value;
+	}
 
-    /**
-     * Gets the value of the port property.
-     * 
-     */
-    public int getPort() {
-        return port;
-    }
+	/**
+	 * Gets the value of the port property.
+	 * 
+	 */
+	public int getPort() {
+		return port;
+	}
 
-    /**
-     * Sets the value of the port property.
-     * 
-     */
-    public void setPort(int value) {
-        this.port = value;
-    }
+	/**
+	 * Sets the value of the port property.
+	 * 
+	 */
+	public void setPort(int value) {
+		this.port = value;
+	}
 
-    /**
-     * Gets the value of the username property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getUsername() {
-        return username;
-    }
+	/**
+	 * Gets the value of the username property.
+	 * 
+	 * @return possible object is {@link String }
+	 * 
+	 */
+	public String getUsername() {
+		return username;
+	}
 
-    /**
-     * Sets the value of the username property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setUsername(String value) {
-        this.username = value;
-    }
+	/**
+	 * Sets the value of the username property.
+	 * 
+	 * @param value
+	 *            allowed object is {@link String }
+	 * 
+	 */
+	public void setUsername(String value) {
+		this.username = value;
+	}
 
-    /**
-     * Gets the value of the password property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getPassword() {
-        return password;
-    }
+	/**
+	 * Gets the value of the password property.
+	 * 
+	 * @return possible object is {@link String }
+	 * 
+	 */
+	public String getPassword() {
+		return password;
+	}
 
-    /**
-     * Sets the value of the password property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setPassword(String value) {
-        this.password = value;
-    }
+	/**
+	 * Sets the value of the password property.
+	 * 
+	 * @param value
+	 *            allowed object is {@link String }
+	 * 
+	 */
+	public void setPassword(String value) {
+		this.password = value;
+	}
 
-    /**
-     * Gets the value of the neighbours property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Neighbours }
-     *     
-     */
-    public Neighbours getNeighbours() {
-        return neighbours;
-    }
+	/**
+	 * Gets the value of the neighbours property.
+	 * 
+	 * @return possible object is {@link Neighbours }
+	 * 
+	 */
+	public Neighbours getNeighbours() {
+		return neighbours;
+	}
 
-    /**
-     * Sets the value of the neighbours property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Neighbours }
-     *     
-     */
-    public void setNeighbours(Neighbours value) {
-        this.neighbours = value;
-    }
+	/**
+	 * Sets the value of the neighbours property.
+	 * 
+	 * @param value
+	 *            allowed object is {@link Neighbours }
+	 * 
+	 */
+	public void setNeighbours(Neighbours value) {
+		this.neighbours = value;
+	}
 
-    /**
-     * Gets the value of the name property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getName() {
-        return name;
-    }
+	/**
+	 * Gets the value of the name property.
+	 * 
+	 * @return possible object is {@link String }
+	 * 
+	 */
+	public String getName() {
+		return name;
+	}
 
-    /**
-     * Sets the value of the name property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setName(String value) {
-        this.name = value;
-    }
+	/**
+	 * Sets the value of the name property.
+	 * 
+	 * @param value
+	 *            allowed object is {@link String }
+	 * 
+	 */
+	public void setName(String value) {
+		this.name = value;
+	}
+
+	public String getAddress() {
+		return getType() + "://" + getHost() + ":" + getPort() + "/"
+				+ getName();
+	}
 
 }

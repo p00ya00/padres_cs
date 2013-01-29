@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<config>
+<topology>
+	 <broker name="uno">
+	     <type>rmi</type>
+	     <params>
+	         <param name="rl" value="50" />
+	         <param name="lklk" value="50sess" />
+	     </params> 
+	     <host>188.194.151.145</host> 
+	     <port>5555</port>
+	     <username>admin-padres</username>
+	     <password>pass123</password>
+	     <neighbours>
+	         <neighbour>shit</neighbour>
+	     </neighbours>
+     </broker>
+     <broker name="shit">
+	     <type>rmi</type>
+	     <params>
+	     </params> 
+	     <host>188.194.151.145</host> 
+	     <port>5555</port>
+	     <username>admin-padres</username>
+	     <password></password>
+	     <neighbours>
+	     </neighbours>
+     </broker>
+     </topology>	     
+<backup>
+    <node>
+         <host>188.193.161.115</host> 
+	     <port>5522</port>
+	     <username>chris</username>
+	     <password>11pass123</password>
+    </node>
+    <node>
+         <host>188.193.161.115</host> 
+	     <port>5522</port>
+	     <username>chris</username>
+	     <password></password>
+    </node>
+</backup>
+
+</config>

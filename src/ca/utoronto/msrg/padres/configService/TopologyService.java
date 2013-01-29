@@ -1,4 +1,4 @@
-package main;
+package ca.utoronto.msrg.padres.configService;
 
 import java.io.File;
 
@@ -12,84 +12,61 @@ import ca.utoronto.msrg.padres.client.ClientException;
 import ca.utoronto.msrg.padres.common.message.Advertisement;
 import ca.utoronto.msrg.padres.common.message.parser.MessageFactory;
 import ca.utoronto.msrg.padres.common.message.parser.ParseException;
-import ca.utoronto.msrg.padres.tools.padresmonitor.ClientInjectionManager;
-import ca.utoronto.msrg.padres.tools.padresmonitor.MonitorFrame;
-import config.Broker;
-import config.Neighbour;
-import config.Topology;
+import ca.utoronto.msrg.padres.configService.schema.Broker;
+import ca.utoronto.msrg.padres.configService.schema.Config;
 
 public class TopologyService {
 
-	public static void main(String[] args) throws BrokerCoreException, ClientException, ParseException, JAXBException {
+	public static void main(String[] args) throws BrokerCoreException,
+			ClientException, ParseException, JAXBException {
 
 		Broker neighbourBroker;
 		String neighbourUri = "", brokerURI = "";
 		Advertisement initialAdv = null;
-		int length;
 
 		try {
-
 			File file = new File(Helper.getDeploymentFile());
-			JAXBContext jaxbContext = JAXBContext.newInstance(Topology.class);
+			JAXBContext jaxbContext = JAXBContext.newInstance(Config.class);
 
 			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-			Topology topology = (Topology) jaxbUnmarshaller.unmarshal(file);
+			Config config = (Config) jaxbUnmarshaller.unmarshal(file);
 
-			try {
-				initialAdv = MessageFactory
-						.createAdvertisementFromString("[class,eq,'BROKER_CONTROL'],[brokerID,isPresent,''],[command,str-contains,'-'],"
-								+ "[broker,isPresent,''],[fromID,isPresent,''],[fromURI,isPresent,'']");
-			} catch (ParseException e) {
-				e.printStackTrace();
-			}
+			initialAdv = MessageFactory
+					.createAdvertisementFromString("[class,eq,'BROKER_CONTROL'],[brokerID,isPresent,''],[command,str-contains,'-'],"
+							+ "[broker,isPresent,''],[fromID,isPresent,''],[fromURI,isPresent,'']");
 
 			Client client = new Client("ClientTS");
-			
-			for (Broker broker : topology.getBrokersList()) {
-				length = (broker.getNeighboursList() == null) ? 0 : broker
-						.getNeighboursList().toArray().length;
-				System.out.println("\n" + broker.getBrokerInfo()
-						+ " neighbours: " + length);
 
-				brokerURI = broker.getType() + "://" + broker.getHost() + ":"
-						+ broker.getPort() + "/" + broker.getName();
-				
+			for (Broker broker : config.getTopology().getBroker()) {
+				// length = (broker.getNeighboursList() == null) ? 0 : broker
+				// .getNeighboursList().toArray().length;
+				System.out.println("\n" + broker.getAddress() + " neighbours: "
+						+ broker.getNeighbours().getNeighbour().size());
+
+				brokerURI = broker.getAddress();
+
 				client.connect(brokerURI);
 				client.advertise(initialAdv);
-				
-				if (broker.getNeighboursList() != null) {
-					for (Neighbour neighbour : broker.getNeighboursList()) {
-						neighbourBroker = Helper.findBroker(
-								neighbour.getNeighbourName(), topology);
 
-						if (neighbourBroker != null) {
-							neighbourUri = neighbourBroker.getType() + "://"
-									+ neighbourBroker.getHost() + ":"
-									+ neighbourBroker.getPort() + "/"
-									+ neighbourBroker.getName();
+				for (String neighbour : broker.getNeighbours().getNeighbour()) {
+					neighbourBroker = Helper.findBroker(neighbour, config);
 
-							Helper.createConnectPub(brokerURI, neighbourUri);
-							client.publish(Helper.getPublication());
+					neighbourUri = neighbourBroker.getAddress();
+					client.publish(Helper.createConnectPub(brokerURI,
+							neighbourUri));
 
-							// System.out.println("BrokerURI: " + brokerURI
-							// + "; NeighbourURI: " + neighbourUri);
-							System.out.println(neighbour.getNeighbourName()
-									+ " - connected");
-						}
-					}
+					System.out.println(neighbour + " - connected");
 				}
 
-//				client.clearBrokerStates(client.getDefaultBrokerAddress());
 				client.disconnect(brokerURI);
-				
 			}
 
 		} catch (JAXBException | ClientException e) {
 			e.printStackTrace();
 		}
-		
-		//start emergency service
-		EmergencyService es = new EmergencyService("emergencyService", brokerURI);
+
+		// start recovery system
+		RecoverySystem es = new RecoverySystem("recoverySystem", brokerURI);
 
 	}
 
