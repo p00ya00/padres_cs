@@ -1,8 +1,5 @@
 package ca.utoronto.msrg.padres.configService;
 
-import RecSys;
-import RecSysI;
-
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
