@@ -6,8 +6,10 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.bind.JAXBException;
 
@@ -25,29 +27,35 @@ public class RecoverySystem extends Client implements IRecoverySys {
 
 	private Publication pub;
 	private Map<String, Serializable> header;
-	private String msgType, failureBrokerID;
+	private String msgType, failureBrokerID, detectorID;
+	private Set<String> failedNodes;
 	// stub of clients
 	private List<CSClient> registeredClients = new ArrayList<CSClient>();
 
-	public RecoverySystem(String id) throws ClientException, ParseException, JAXBException {
+	public RecoverySystem(String id) throws ClientException, ParseException,
+			JAXBException {
 		super(id);
-		
+
 		Config config = Helper.loadDeploymentFile();
 		String brokerURI = config.getTopology().getBroker().get(0).getAddress();
-		
+		failedNodes = new HashSet<String>();
+
 		exportToRegistry();
 		connect(brokerURI);
 		publishGlobalFD();
-		subscribeToHeartbeats();		
+		subscribeToHeartbeats();
 		System.out.println("RecoverySystem has started...");
 	}
 
-	public RecoverySystem(String id, String brokerURI) throws ClientException, ParseException {
+	public RecoverySystem(String id, String brokerURI) throws ClientException,
+			ParseException {
 		super(id);
+		failedNodes = new HashSet<String>();
+
 		exportToRegistry();
 		connect(brokerURI);
 		publishGlobalFD();
-		subscribeToHeartbeats();		
+		subscribeToHeartbeats();
 		System.out.println("RecoverySystem has started...");
 	}
 
@@ -66,6 +74,19 @@ public class RecoverySystem extends Client implements IRecoverySys {
 				+ "[detectedID,isPresent,'TEXT']," + "[type,isPresent,'TEXT']"));
 	}
 
+	private void clearHeartbeatFailure(String detectedID, String detectorID) {
+		// try {
+		// publish(MessageFactory
+		// .createPublicationFromString("[class,HEARTBEAT_MANAGER],[detectedID,'"
+		// + detectedID
+		// + "'],"
+		// + "[type,'FAILURE_CLEARED'],[detectorID,'"
+		// + detectorID + "']"));
+		// } catch (ClientException | ParseException e) {
+		// e.printStackTrace();
+		// }
+	}
+
 	@Override
 	public void processMessage(Message msg) {
 		// super.processMessage(msg);
@@ -79,11 +100,19 @@ public class RecoverySystem extends Client implements IRecoverySys {
 			// heartbeat message arrived
 			if (msgType.equals(HeartbeatSubscriber.MESSAGE_CLASS)) {
 				failureBrokerID = header.get("detectedID").toString();
-				// try to restart failed node
-				restartBroker(failureBrokerID);
-				readvertiseAll();
-				resubscribeAll();
-				System.out.println("failureBrokerID: " + failureBrokerID);
+				// we don't know about this failed node yet
+				if (!failedNodes.contains(failureBrokerID)) {
+
+					detectorID = header.get("detectorID").toString();
+					failedNodes.add(failureBrokerID);
+
+					// try to restart failed node
+					restartBroker(failureBrokerID);
+					readvertiseAll();
+					resubscribeAll();
+					clearHeartbeatFailure(failureBrokerID, detectorID);
+					System.out.println("failureBrokerID: " + failureBrokerID);
+				}
 			}
 		}
 	}
@@ -107,49 +136,45 @@ public class RecoverySystem extends Client implements IRecoverySys {
 	public void deregisterClient(CSClient client) throws RemoteException {
 		registeredClients.remove(client);
 	}
-	
-	public void readvertiseAll()
-	{
-		for(CSClient client: registeredClients)
+
+	public void readvertiseAll() {
+		System.out.println("No. registered clients: "
+				+ registeredClients.size());
+		for (CSClient client : registeredClients)
 			try {
 				client.resendAdvertisements();
-			} catch (Exception e)
-			{
+			} catch (Exception e) {
 				System.err.println("Client cannot readvertise!");
 				e.printStackTrace();
 			}
 	}
-	
-	public void resubscribeAll()
-	{
-		for(CSClient client: registeredClients)
+
+	public void resubscribeAll() {
+		for (CSClient client : registeredClients)
 			try {
 				client.resendSubscriptions();
-			} catch (Exception e)
-			{
+			} catch (Exception e) {
 				System.err.println("Client cannot resubscribe!");
 				e.printStackTrace();
 			}
 	}
-	
-	protected void exportToRegistry()
-	{
-		try 
-		{
-			IRecoverySys recSysStub = (IRecoverySys)UnicastRemoteObject.exportObject(this, 0);
+
+	protected void exportToRegistry() {
+		try {
+			IRecoverySys recSysStub = (IRecoverySys) UnicastRemoteObject
+					.exportObject(this, 0);
 			Registry registry = LocateRegistry.getRegistry();
 			registry.bind("RecoverySystem", recSysStub);
-	        System.err.println("Recovery system added to registry!");
-		} 
-		catch (Exception e) 
-		{
+			System.err.println("Recovery system added to registry!");
+		} catch (Exception e) {
 			System.err.println("Cannot register recovery service in registry!");
 			e.printStackTrace();
 		}
 	}
-	
-	public static void main(String[] args) throws ClientException, ParseException, JAXBException{
+
+	public static void main(String[] args) throws ClientException,
+			ParseException, JAXBException {
 		RecoverySystem rs = new RecoverySystem("recoverySystem");
 	}
-	
+
 }
