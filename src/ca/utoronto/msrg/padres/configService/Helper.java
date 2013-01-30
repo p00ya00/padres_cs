@@ -1,5 +1,11 @@
 package ca.utoronto.msrg.padres.configService;
 
+import java.io.File;
+
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
+
 import ca.utoronto.msrg.padres.common.message.Publication;
 import ca.utoronto.msrg.padres.common.message.parser.MessageFactory;
 import ca.utoronto.msrg.padres.configService.schema.Broker;
@@ -33,6 +39,14 @@ public class Helper {
 		}
 
 		return null;
+	}
+	
+	public static Config loadDeploymentFile() throws JAXBException{
+		File file = new File(getDeploymentFile());
+		JAXBContext jaxbContext = JAXBContext.newInstance(Config.class);
+
+		Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+		return (Config) jaxbUnmarshaller.unmarshal(file);
 	}
 
 	public static String getDeploymentFile() {

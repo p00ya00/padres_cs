@@ -1,18 +1,15 @@
 package ca.utoronto.msrg.padres.configService;
 
 import java.io.Serializable;
-import java.net.MalformedURLException;
-import java.rmi.Naming;
-import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+
+import javax.xml.bind.JAXBException;
 
 import ca.utoronto.msrg.padres.broker.brokercore.HeartbeatSubscriber;
 import ca.utoronto.msrg.padres.client.Client;
@@ -22,6 +19,7 @@ import ca.utoronto.msrg.padres.common.message.Publication;
 import ca.utoronto.msrg.padres.common.message.PublicationMessage;
 import ca.utoronto.msrg.padres.common.message.parser.MessageFactory;
 import ca.utoronto.msrg.padres.common.message.parser.ParseException;
+import ca.utoronto.msrg.padres.configService.schema.Config;
 
 public class RecoverySystem extends Client implements IRecoverySys {
 
@@ -31,16 +29,25 @@ public class RecoverySystem extends Client implements IRecoverySys {
 	// stub of clients
 	private List<CSClient> registeredClients = new ArrayList<CSClient>();
 
-	public RecoverySystem(String id) throws ClientException {
+	public RecoverySystem(String id) throws ClientException, ParseException, JAXBException {
 		super(id);
+		
+		Config config = Helper.loadDeploymentFile();
+		String brokerURI = config.getTopology().getBroker().get(0).getAddress();
+		
+		exportToRegistry();
+		connect(brokerURI);
+		publishGlobalFD();
+		subscribeToHeartbeats();		
+		System.out.println("RecoverySystem has started...");
 	}
 
 	public RecoverySystem(String id, String brokerURI) throws ClientException, ParseException {
 		super(id);
+		exportToRegistry();
 		connect(brokerURI);
 		publishGlobalFD();
-		subscribeToHeartbeats();
-		exportToRegistry();
+		subscribeToHeartbeats();		
 		System.out.println("RecoverySystem has started...");
 	}
 
@@ -58,7 +65,6 @@ public class RecoverySystem extends Client implements IRecoverySys {
 				+ "[detectorID,isPresent,'TEXT'],"
 				+ "[detectedID,isPresent,'TEXT']," + "[type,isPresent,'TEXT']"));
 	}
-	
 
 	@Override
 	public void processMessage(Message msg) {
@@ -141,4 +147,9 @@ public class RecoverySystem extends Client implements IRecoverySys {
 			e.printStackTrace();
 		}
 	}
+	
+	public static void main(String[] args) throws ClientException, ParseException, JAXBException{
+		RecoverySystem rs = new RecoverySystem("recoverySystem");
+	}
+	
 }

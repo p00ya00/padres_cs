@@ -7,23 +7,60 @@
 	         <param name="rl" value="50" />
 	         <param name="lklk" value="50sess" />
 	     </params> 
-	     <host>188.194.151.145</host> 
+	     <host>188.194.152.218</host> 
 	     <port>5555</port>
 	     <username>admin-padres</username>
 	     <password>pass123</password>
 	     <neighbours>
-	         <neighbour>shit</neighbour>
+	         <neighbour>dos</neighbour>
 	     </neighbours>
      </broker>
-     <broker name="shit">
+     <broker name="dos">
 	     <type>rmi</type>
 	     <params>
 	     </params> 
-	     <host>188.194.151.145</host> 
-	     <port>5555</port>
+	     <host>188.194.152.218</host> 
+	     <port>5556</port>
 	     <username>admin-padres</username>
 	     <password></password>
 	     <neighbours>
+		  <neighbour>tres</neighbour>
+	     </neighbours>
+     </broker>
+	      <broker name="tres">
+	     <type>rmi</type>
+	     <params>
+	     </params> 
+	     <host>188.194.152.218</host> 
+	     <port>5558</port>
+	     <username>admin-padres</username>
+	     <password></password>
+	     <neighbours>
+		  <neighbour>cuatro</neighbour>
+	     </neighbours>
+     </broker>
+	 	      <broker name="cuatro">
+	     <type>rmi</type>
+	     <params>
+	     </params> 
+	     <host>188.194.152.218</host> 
+	     <port>5559</port>
+	     <username>admin-padres</username>
+	     <password></password>
+	     <neighbours>
+		  <neighbour>cinco</neighbour>
+	     </neighbours>
+     </broker>
+	 	      <broker name="cinco">
+	     <type>rmi</type>
+	     <params>
+	     </params> 
+	     <host>188.194.152.218</host> 
+	     <port>5560</port>
+	     <username>admin-padres</username>
+	     <password></password>
+	     <neighbours>
+		  <neighbour>uno</neighbour>
 	     </neighbours>
      </broker>
      </topology>	     

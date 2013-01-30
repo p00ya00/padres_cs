@@ -17,11 +17,7 @@ public class StartBrokersTest {
 		BrokerCore brokerCore = null;
 
 		try {
-			File file = new File(Helper.getDeploymentFile());
-			JAXBContext jaxbContext = JAXBContext.newInstance(Config.class);
-
-			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-			Config config = (Config) jaxbUnmarshaller.unmarshal(file); 
+			Config config = Helper.loadDeploymentFile();
 
 			for (Broker broker : config.getTopology().getBroker()) {
 				brokerCore = new BrokerCore("-uri " + broker.getAddress());

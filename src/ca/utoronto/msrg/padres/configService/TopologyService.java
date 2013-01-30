@@ -25,11 +25,7 @@ public class TopologyService {
 		Advertisement initialAdv = null;
 
 		try {
-			File file = new File(Helper.getDeploymentFile());
-			JAXBContext jaxbContext = JAXBContext.newInstance(Config.class);
-
-			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-			Config config = (Config) jaxbUnmarshaller.unmarshal(file);
+			Config config = Helper.loadDeploymentFile();
 
 			initialAdv = MessageFactory
 					.createAdvertisementFromString("[class,eq,'BROKER_CONTROL'],[brokerID,isPresent,''],[command,str-contains,'-'],"
@@ -66,7 +62,7 @@ public class TopologyService {
 		}
 
 		// start recovery system
-		RecoverySystem es = new RecoverySystem("recoverySystem", brokerURI);
+//		RecoverySystem es = new RecoverySystem("recoverySystem", brokerURI);
 
 	}
 
