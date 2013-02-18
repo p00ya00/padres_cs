@@ -50,14 +50,20 @@ public class RemoteExec {
 		return "/home/p00ya/padres-master";
 	}
 	
-	private String createCommand(Broker broker)
+	public String createCommand(Broker broker)
 	{
 		String command = getPadresPath(broker);
+		String slash = null;
 		
-		command += "/bin/startbroker ";
+		if(command.startsWith("/")) //OS is *nix
+			slash = "/";
+		else //OS is Windows
+			slash = "\\";
+		
+		command += slash + "bin" + slash + "startbroker ";
 		command += "-uri " + broker.getType() + "://" + broker.getHost() + ":" +
 		           broker.getPort() + "/" + broker.getName() + " ";
-		if(broker.getParams().getParam() != null)
+		if(broker.getParams() != null && broker.getParams().getParam() != null)
 		{
 			for(Param p : broker.getParams().getParam())
 			{
