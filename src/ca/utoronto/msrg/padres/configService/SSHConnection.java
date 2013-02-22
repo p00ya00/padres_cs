@@ -1,8 +1,8 @@
 package ca.utoronto.msrg.padres.configService;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.rmi.RemoteException;
+import java.util.List;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -15,10 +15,7 @@ import com.jcraft.jsch.*;
 /*
  * TO DO:
  * 
- * - return output of remote execution
- * - get PADRES path from environment variable
- * - recognize host OS type to handle Linux/Windows path format
- * - if possible, replace thread sleep with waiting for command to finish execution
+ * - create -n parameter
  */
 
 public class SSHConnection {
@@ -86,8 +83,6 @@ public class SSHConnection {
 		return exitCode;
 	}
 	
-	
-	
 	public void restartBroker(Broker broker) throws RemoteExecutionException
 	{
 		stopBroker(broker);
@@ -99,6 +94,10 @@ public class SSHConnection {
 		String command = "startbroker -uri " + broker.getType() + "://" 
 						+ broker.getHost() + ":" + broker.getPort() 
 						+ "/" + broker.getName() + " ";
+		List<String> neighbours = broker.getNeighbours().getNeighbour(); 
+		if(neighbours != null && !neighbours.isEmpty())
+			command += "-n";
+		
 		if(broker.getParams() != null && broker.getParams().getParam() != null)
 			for(Param p : broker.getParams().getParam())
 				command += "-" + p.getName() + " " + p.getValue() + " ";
@@ -129,19 +128,4 @@ public class SSHConnection {
 	
 	private ByteArrayOutputStream outputStream = null;
 	private ByteArrayOutputStream errorStream = null;
-	
-//	public static void main(String[] args) {
-//		File file = new File("topologyScripts/deployment.xml");
-//		JAXBContext jaxbContext;
-//		RemoteExec remote = new RemoteExec();
-//		try {
-//			jaxbContext = JAXBContext.newInstance(Topology.class);
-//			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-//			Topology topology = (Topology) jaxbUnmarshaller.unmarshal(file);
-//			for(Broker broker : topology.getBroker())
-//				remote.exec(broker);
-//		} catch (JAXBException e) {
-//			e.printStackTrace();
-//		}
-//	}
 }

@@ -1,69 +1,45 @@
 package ca.utoronto.msrg.padres.configService;
 
 import java.io.File;
-
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
-
-import ca.utoronto.msrg.padres.broker.brokercore.BrokerCoreException;
-import ca.utoronto.msrg.padres.client.Client;
-import ca.utoronto.msrg.padres.client.ClientException;
-import ca.utoronto.msrg.padres.common.message.Advertisement;
-import ca.utoronto.msrg.padres.common.message.parser.MessageFactory;
-import ca.utoronto.msrg.padres.common.message.parser.ParseException;
-import ca.utoronto.msrg.padres.configService.schema.Broker;
-import ca.utoronto.msrg.padres.configService.schema.Config;
+import ca.utoronto.msrg.padres.configService.SSHConnection;
+import ca.utoronto.msrg.padres.configService.schema.*;
 
 public class TopologyService {
-
-	public static void main(String[] args) throws BrokerCoreException,
-			ClientException, ParseException, JAXBException {
-
-		Broker neighbourBroker;
-		String neighbourUri = "", brokerURI = "";
-		Advertisement initialAdv = null;
-
-		try {
-			Config config = Helper.loadDeploymentFile();
-
-			initialAdv = MessageFactory
-					.createAdvertisementFromString("[class,eq,'BROKER_CONTROL'],[brokerID,isPresent,''],[command,str-contains,'-'],"
-							+ "[broker,isPresent,''],[fromID,isPresent,''],[fromURI,isPresent,'']");
-
-			Client client = new Client("ClientTS");
-
-			for (Broker broker : config.getTopology().getBroker()) {
-				// length = (broker.getNeighboursList() == null) ? 0 : broker
-				// .getNeighboursList().toArray().length;
-				System.out.println("\n" + broker.getAddress() + " neighbours: "
-						+ broker.getNeighbours().getNeighbour().size());
-
-				brokerURI = broker.getAddress();
-
-				client.connect(brokerURI);
-				client.advertise(initialAdv);
-
-				for (String neighbour : broker.getNeighbours().getNeighbour()) {
-					neighbourBroker = Helper.findBroker(neighbour, config);
-
-					neighbourUri = neighbourBroker.getAddress();
-					client.publish(Helper.createConnectPub(brokerURI,
-							neighbourUri));
-
-					System.out.println(neighbour + " - connected");
-				}
-
-				client.disconnect(brokerURI);
-			}
-
-		} catch (JAXBException | ClientException e) {
-			e.printStackTrace();
+	public static void main(String[] args) {
+		if(args.length == 0)
+		{
+			System.err.println("Cannot start topology service. No deployment file provided!");
+			System.err.println("USAGE: topology_service path/to/deployment.file");
+			System.exit(1);
 		}
-
-		// start recovery system
-//		RecoverySystem es = new RecoverySystem("recoverySystem", brokerURI);
-
+		
+		Config config = null;
+		File file = new File(args[1]);
+		JAXBContext jaxbContext = null; 
+		try {
+			jaxbContext = JAXBContext.newInstance(Config.class);
+			Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
+			config = (Config)jaxbUnmarshaller.unmarshal(file);
+		} catch(JAXBException e) {
+			System.err.println("Cannot start topology service. Missing or corrupted deployment file!");
+			System.exit(1);
+		}
+		
+		//start brokers
+		SSHConnection ssh = new SSHConnection();
+		for(Broker broker: config.getTopology().getBroker())
+		{
+			try {
+				ssh.startBroker(broker);
+			} catch (RemoteExecutionException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+		}
+		
+		RecoverySystem es = new RecoverySystem("recoverySystem");
 	}
-
 }
