@@ -226,7 +226,7 @@ public class Broker {
 		this.name = value;
 	}
 
-	public String getAddress() {
+	public String getURI() {
 		return getType() + "://" + getHost() + ":" + getPort() + "/"
 				+ getName();
 	}

@@ -27,7 +27,6 @@ public class CSClientImpl extends Client implements CSClient {
 	public CSClientImpl(CSClientConfig newConfig) throws ClientException {
 		super(newConfig);
 		registerToRecoverySys();
-		//System.out.println("[DEBUG] RecoverySystem: "+newConfig.recoverySystemLoc);
 	}
 
 	public CSClientImpl(String id, CSClientConfig newConfig) throws ClientException {
