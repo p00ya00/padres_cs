@@ -26,11 +26,7 @@ public class CSClientConfig extends ClientConfig {
 	}
 
 	public CSClientConfig() throws ClientException {
-		super();
-	}
-
-	public CSClientConfig(ClientConfig origConfig) {
-		super(origConfig);
+		this(null);
 	}
 
 	public CSClientConfig(String configFile) throws ClientException {
@@ -52,6 +48,7 @@ public class CSClientConfig extends ClientConfig {
 			logPeriod = Integer.parseInt(clientProps.getProperty("log.period"));
 			// recovery system location in the client property file
 			recoverySystemLoc = clientProps.getProperty("client.recovery_system");
+//			System.out.println("location: "+recoverySystemLoc);
 		} catch (FileNotFoundException e) {
 			throw new ClientException("Config file not found: " + this.configFile, e);
 		} catch (IOException e) {

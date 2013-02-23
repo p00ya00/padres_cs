@@ -225,10 +225,4 @@ public class Broker {
 	public void setName(String value) {
 		this.name = value;
 	}
-
-	public String getURI() {
-		return getType() + "://" + getHost() + ":" + getPort() + "/"
-				+ getName();
-	}
-
 }

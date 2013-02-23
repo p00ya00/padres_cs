@@ -41,49 +41,49 @@ public class RecoverySystem extends Client implements IRecoverySys {
 	private String msgType, failedBrokerID;
 	private int usedBackupNodes;
 	private Config config;
-	private RemoteExec remoteExec;
+	private SSHConnection remoteExec;
+	private Registry registry = null;
+	// URI to which recSys is connected
+	private String brokerURI;
 	// stub of clients
 	private List<CSClient> registeredClients = new ArrayList<CSClient>();
 
+	// default configurations
+	public static final String DIR_SLASH = System.getProperty("file.separator");
+	public static final String PADRES_HOME = System.getenv("PADRES_HOME") == null ? "."
+			+ File.separator : System.getenv("PADRES_HOME") + File.separator;
 	// deployment file location
-	private final String DEPLOYMENT_FILE = "etc\\deployment.xml";
-
-	private final boolean DEBUG = true; 
+	public static final String DEPLOYMENT_FILE = String.format("%s%setc%sdeployment.xml",
+			PADRES_HOME, File.separator, File.separator);
+	
+	public static boolean DEBUG = false; 
+	public static void isDebug(boolean mode){
+		DEBUG = mode;
+	}
 
 	/**
 	 * 
-	 * Constructor. It loads default deployment file and connects to the first broker
-	 * on the list. It registers service in the RMI registry, switches on the global
-	 * failure detection option and subscribe to the heartbeats in the system.
+	 * Constructor. It loads default deployment file and gets the first broker
+	 * from the list. Resets the counter of the used backup nodes.
 	 * 
 	 * @param id - recovery system identifier
 	 * @throws ClientException
 	 * @throws ParseException
 	 * @throws JAXBException
 	 */
-	public RecoverySystem(String id) throws ClientException, ParseException,
-			JAXBException {
+	public RecoverySystem(String id) throws ClientException, JAXBException{
 		super(id);
 
 		this.config = loadDeploymentFile();
-		String brokerURI = getBrokerToConnect(config, 0);
-		this.remoteExec = new RemoteExec();
+		this.brokerURI = getBrokerToConnect(config, 0);
+		this.remoteExec = new SSHConnection();
 		usedBackupNodes = 0;
-
-		exportToRegistry();
-		connect(brokerURI);
-		publishGlobalFD(true);
-		subscribeToHeartbeats();
-		
-		initLog("recoverySystem");
-		System.out.println("RecoverySystem has started...");
 	}
 
 	/**
 	 * 
-	 * Constructor. It connects to the first broker provided in the Config object.
-	 * It registers service in the RMI registry, switches on the global
-	 * failure detection option and subscribe to the heartbeats in the system.
+	 * Constructor. It gets first broker from the Config object.
+	 * Resets the counter of the used backup nodes.
 	 * 
 	 * @param id - recovery system identifier
 	 * @param config - Config object with whole topology nodes
@@ -91,15 +91,27 @@ public class RecoverySystem extends Client implements IRecoverySys {
 	 * @throws ClientException
 	 * @throws ParseException
 	 */
-	public RecoverySystem(String id, Config config, RemoteExec remoteExec)
-			throws ClientException, ParseException {
+	public RecoverySystem(String id, Config config, SSHConnection remoteExec) throws ClientException {
 		super(id);
+		
 		this.config = config;
 		this.remoteExec = remoteExec;
 		usedBackupNodes = 0;
-
+		this.brokerURI = getBrokerToConnect(config, 0);
+	}
+	
+	/**
+	 * 
+	 * Initializes the system. Connects to the specified broker.
+	 * It registers service in the RMI registry, switches on the global
+	 * failure detection option and subscribe to the heartbeats in the system.
+	 * 
+	 * @throws ClientException
+	 * @throws ParseException
+	 */
+	public void initialize() throws ClientException, ParseException{
 		exportToRegistry();
-		connect(getBrokerToConnect(config, 0));
+		connect(brokerURI);
 		publishGlobalFD(true);
 		subscribeToHeartbeats();
 		
@@ -136,7 +148,18 @@ public class RecoverySystem extends Client implements IRecoverySys {
 	 * @return brokerURI
 	 */
 	private String getBrokerToConnect(Config config, int number) {
-		return config.getTopology().getBroker().get(number).getURI();
+		return getBrokerURI(config.getTopology().getBroker().get(number));
+	}
+	
+	/**
+	 * 
+	 * Creates URI of the broker
+	 * 
+	 * @return
+	 */
+	public String getBrokerURI(Broker broker) {
+		return broker.getType() + "://" + broker.getHost() + ":" + broker.getPort() + "/"
+				+ broker.getName();
 	}
 
 	/**
@@ -186,7 +209,7 @@ public class RecoverySystem extends Client implements IRecoverySys {
 	 */
 	private Broker findBrokerByID(String brokerID) {
 		for (Broker broker : config.getTopology().getBroker()) {
-			if (broker.getURI().equals(brokerID)) {
+			if (getBrokerURI(broker).equals(brokerID)) {
 				return broker;
 			}
 		}
@@ -248,15 +271,15 @@ public class RecoverySystem extends Client implements IRecoverySys {
 			ParseException {
 
 		for (String neighbour : failedBroker.getNeighbours().getNeighbour()) {
-			removeNeigbour(findBrokerByName(neighbour).getURI(),
-					failedBroker.getURI());
+			removeNeigbour(getBrokerURI(findBrokerByName(neighbour)),
+					getBrokerURI(failedBroker));
 		}
 
 		for (Broker broker : config.getTopology().getBroker()) {
 			for (String neighbour : broker.getNeighbours().getNeighbour()) {
 				if (neighbour.equals(failedBroker.getName())) {
-					removeNeigbour(broker.getURI(),
-							failedBroker.getURI());
+					removeNeigbour(getBrokerURI(broker),
+							getBrokerURI(failedBroker));
 				}
 			}
 		}
@@ -339,24 +362,32 @@ public class RecoverySystem extends Client implements IRecoverySys {
 				
 				try {
 					// try to restart failed broker
-					remoteExec.restartBroker(broker);
-				} catch (RemoteExecException e) {
-					clientLogger.error("Cannot restart failed broker - "+broker.getURI());
+					if(!DEBUG){
+						remoteExec.restartBroker(broker);
+					} else {
+						throw new RemoteExecutionException();
+					}					
+				} catch (RemoteExecutionException e) {
+					clientLogger.error("Cannot restart failed broker - "+getBrokerURI(broker));
 					try {
 						// get backup broker to replace failed one
 						broker = getBackupNode(broker);
 						if (broker != null) {
 							// start the replacement
-							remoteExec.startBroker(broker);
+							if(!DEBUG){
+								remoteExec.startBroker(broker);
+							} else {
+								startBrokerLocally(broker);
+							}							
 						} else {
 							clientLogger.error("No more backup nodes to use");
 							System.out
 									.println("RecoverySystem: No more backup nodes - system cannot recover "
 											+ failedBrokerID);
 						} 
-					} catch (RemoteExecException e1) {
-						System.err.println("Backup node - "+broker.getURI()+" cannot be started");
-						clientLogger.error("Backup node - "+broker.getURI()+" cannot be started", e1);
+					} catch (RemoteExecutionException e1) {
+						System.err.println("Backup node - "+getBrokerURI(broker)+" cannot be started");
+						clientLogger.error("Backup node - "+getBrokerURI(broker)+" cannot be started", e1);
 						e1.printStackTrace();
 					}
 				}
@@ -365,23 +396,51 @@ public class RecoverySystem extends Client implements IRecoverySys {
 				resubscribeAll();
 
 				System.out.println("[RecoverySys] Broker " + failedBrokerID
-						+ " successfully replaced with the "+broker.getURI()+" broker.");
-				clientLogger.info("Broker "+failedBrokerID+ " successfully replaced with the "+broker.getURI()+" broker.");
+						+ " successfully replaced with the "+getBrokerURI(broker)+" broker.");
+				clientLogger.info("Broker "+failedBrokerID+ " successfully replaced with the "+getBrokerURI(broker)+" broker.");
 			}
 		}
 	}
-
-	// just for testing
-	private void restartBroker(String brokerURI) {
+	
+	private void startBrokerLocally(Broker broker){
 		BrokerCore brokerCore;
+		
 		try {
-			brokerCore = new BrokerCore(
-					"-uri rmi://188.193.163.89:5588/dos -n rmi://188.193.163.89:5555/uno rmi://188.193.163.89:5558/tres");
+			brokerCore = new BrokerCore(createStartCommand(broker));
 			brokerCore.initialize();
-		} catch (BrokerCoreException e1) {
-			e1.printStackTrace();
+		} catch (BrokerCoreException e) {
+			System.err.println("Cannot start - "+getBrokerURI(broker)+" locally");
+			clientLogger.error("Cannot start - "+getBrokerURI(broker)+" locally", e);
+			e.printStackTrace();
 		}
 	}
+	
+	public String createStartCommand(Broker broker){
+		String start = "-uri ";
+		start += getBrokerURI(broker);
+		
+		List<String> neighbours = broker.getNeighbours().getNeighbour(); 
+		if(!neighbours.isEmpty()){
+			start += " -n ";
+			for(String neighbour : broker.getNeighbours().getNeighbour()){
+				start = start + getBrokerURI(findBrokerByName(neighbour)) + " ";
+			}
+		}
+	
+		return start;
+	}
+
+	// just for testing
+//	private void restartBroker(String brokerURI) {
+//		BrokerCore brokerCore;
+//		try {
+//			brokerCore = new BrokerCore(
+//					"-uri rmi://188.193.163.89:5588/dos -n rmi://188.193.163.89:5555/uno rmi://188.193.163.89:5558/tres");
+//			brokerCore.initialize();
+//		} catch (BrokerCoreException e1) {
+//			e1.printStackTrace();
+//		}
+//	}
 
 	@Override
 	public void registerClient(CSClient client) throws RemoteException {
@@ -392,13 +451,18 @@ public class RecoverySystem extends Client implements IRecoverySys {
 	public void deregisterClient(CSClient client) throws RemoteException {
 		registeredClients.remove(client);
 	}
+	
+	/**
+	 * @return number of registered clients to the service
+	 */
+	public int getRegClientsNumber(){
+		return registeredClients.size();
+	}
 
 	/**
 	 * Forces all registered clients to resend their advertisements
 	 */
 	public void readvertiseAll() {
-		System.out.println("No. registered clients: "
-				+ registeredClients.size());
 		for (CSClient client : registeredClients)
 			try {
 				client.resendAdvertisements();
@@ -422,15 +486,28 @@ public class RecoverySystem extends Client implements IRecoverySys {
 				e.printStackTrace();
 			}
 	}
+	
+	private Registry createRegistry(int port) throws RemoteException{
+		return LocateRegistry.createRegistry(port);
+	}
 
 	/**
 	 * Registers service under the name "RecoverySystem" in the RMI registry
 	 */
 	protected void exportToRegistry() {
+		if(registry == null){
+			try {
+				registry = createRegistry(1099);
+			} catch (RemoteException e) {
+				clientLogger.error("Cannot create RMI registry", e);
+				System.err.println("Cannot create RMI registry!");
+				e.printStackTrace();
+			}
+		}
+		
 		try {
 			IRecoverySys recSysStub = (IRecoverySys) UnicastRemoteObject
 					.exportObject(this, 0);
-			Registry registry = LocateRegistry.getRegistry();
 			registry.bind("RecoverySystem", recSysStub);
 			System.out.println("Recovery system added to registry!");
 		} catch (Exception e) {
@@ -443,6 +520,7 @@ public class RecoverySystem extends Client implements IRecoverySys {
 	public static void main(String[] args) throws ClientException,
 			ParseException, JAXBException {
 		RecoverySystem rs = new RecoverySystem("recoverySystem");
+		rs.initialize();
 	}
 
 }

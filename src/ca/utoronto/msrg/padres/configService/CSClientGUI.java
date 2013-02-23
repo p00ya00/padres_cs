@@ -319,7 +319,7 @@ public class CSClientGUI extends CSClientImpl implements ActionListener {
 					CONFIG_FILE_PATH);
 			// load the client configuration
 			CSClientConfig userConfig = new CSClientConfig(configFile);
-			System.out.println("[DEBUG] configFile recovery system: "+userConfig.recoverySystemLoc);
+//			System.out.println("[DEBUG] configFile recovery system: "+userConfig.recoverySystemLoc);
 			// overwrite the client configurations from the config file with configuration
 			// parameters from the command line
 			userConfig.overwriteWithCmdLineArgs(cmdLine);
