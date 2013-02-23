@@ -4,6 +4,9 @@ import java.io.File;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
+
+import ca.utoronto.msrg.padres.client.ClientException;
+import ca.utoronto.msrg.padres.common.message.parser.ParseException;
 import ca.utoronto.msrg.padres.configService.SSHConnection;
 import ca.utoronto.msrg.padres.configService.schema.*;
 
@@ -38,8 +41,15 @@ public class TopologyService {
 				e.printStackTrace();
 				System.exit(1);
 			}
-		}
+		}		
 		
-		RecoverySystem es = new RecoverySystem("recoverySystem");
+		try {
+			RecoverySystem es = new RecoverySystem("recoverySystem", config, ssh);
+			es.initialize();
+		} catch (ClientException e) {
+			e.printStackTrace();
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}		
 	}
 }

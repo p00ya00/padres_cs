@@ -2,6 +2,8 @@ package ca.utoronto.msrg.padres.configService;
 
 import java.io.File;
 import java.io.Serializable;
+import java.rmi.AccessException;
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -42,7 +44,7 @@ public class RecoverySystem extends Client implements IRecoverySys {
 	private int usedBackupNodes;
 	private Config config;
 	private SSHConnection remoteExec;
-	private Registry registry = null;
+	private Registry registry;
 	// URI to which recSys is connected
 	private String brokerURI;
 	// stub of clients
@@ -326,6 +328,7 @@ public class RecoverySystem extends Client implements IRecoverySys {
 			pub = ((PublicationMessage) msg).getPublication();
 			header = pub.getPairMap();
 			msgType = header.get("class").toString();
+//			System.out.println("got message: "+msg);
 
 			// heartbeat failure message has arrived
 			if (msgType.equals(HeartbeatSubscriber.MESSAGE_CLASS)) {
@@ -338,17 +341,6 @@ public class RecoverySystem extends Client implements IRecoverySys {
 				clientLogger.info("Broker " + failedBrokerID
 						+ " has failed. Trying to restart it...");
 
-				// try {
-				// removeNeigbour("rmi://188.193.163.89:5555/uno",
-				// "rmi://188.193.163.89:5556/dos");
-				// removeNeigbour("rmi://188.193.163.89:5558/tres",
-				// "rmi://188.193.163.89:5556/dos");
-				// } catch (ClientException | ParseException e) {
-				// e.printStackTrace();
-				// }
-				// try to restart failed node
-				// restartBroker(failedBrokerID);
-				
 				// inform brokers about failed broker. Let them remove it from their routing tables
 				try {
 					removeBroker(broker);
@@ -391,20 +383,23 @@ public class RecoverySystem extends Client implements IRecoverySys {
 						e1.printStackTrace();
 					}
 				}
-
-				readvertiseAll();
-				resubscribeAll();
-
-				System.out.println("[RecoverySys] Broker " + failedBrokerID
-						+ " successfully replaced with the "+getBrokerURI(broker)+" broker.");
-				clientLogger.info("Broker "+failedBrokerID+ " successfully replaced with the "+getBrokerURI(broker)+" broker.");
+			
+				// if there were free backup nodes
+				if(broker!=null){
+					readvertiseAll();
+					resubscribeAll();
+					
+					System.out.println("[RecoverySys] Broker " + failedBrokerID
+							+ " successfully replaced with the "+getBrokerURI(broker)+" broker.");
+					clientLogger.info("Broker "+failedBrokerID+ " successfully replaced with the "+getBrokerURI(broker)+" broker.");
+				}
 			}
 		}
 	}
 	
 	private void startBrokerLocally(Broker broker){
 		BrokerCore brokerCore;
-		
+		System.out.println("Starting "+getBrokerURI(broker));
 		try {
 			brokerCore = new BrokerCore(createStartCommand(broker));
 			brokerCore.initialize();
@@ -423,24 +418,21 @@ public class RecoverySystem extends Client implements IRecoverySys {
 		if(!neighbours.isEmpty()){
 			start += " -n ";
 			for(String neighbour : broker.getNeighbours().getNeighbour()){
-				start = start + getBrokerURI(findBrokerByName(neighbour)) + " ";
+				start = start + getBrokerURI(findBrokerByName(neighbour)) + ",";
+
+			}
+		}
+
+		for (Broker otherBrokers : config.getTopology().getBroker()) {
+			for (String neighbour : otherBrokers.getNeighbours().getNeighbour()) {
+				if (neighbour.equals(broker.getName())) {
+					start = start + getBrokerURI(findBrokerByName(otherBrokers.getName())) + ",";
+				}
 			}
 		}
 	
-		return start;
+		return start.substring(0, start.length()-1);
 	}
-
-	// just for testing
-//	private void restartBroker(String brokerURI) {
-//		BrokerCore brokerCore;
-//		try {
-//			brokerCore = new BrokerCore(
-//					"-uri rmi://188.193.163.89:5588/dos -n rmi://188.193.163.89:5555/uno rmi://188.193.163.89:5558/tres");
-//			brokerCore.initialize();
-//		} catch (BrokerCoreException e1) {
-//			e1.printStackTrace();
-//		}
-//	}
 
 	@Override
 	public void registerClient(CSClient client) throws RemoteException {
@@ -495,12 +487,12 @@ public class RecoverySystem extends Client implements IRecoverySys {
 	 * Registers service under the name "RecoverySystem" in the RMI registry
 	 */
 	protected void exportToRegistry() {
-		if(registry == null){
+		try {
+			registry = createRegistry(1099);
+		} catch (RemoteException e2) {
 			try {
-				registry = createRegistry(1099);
+				registry = LocateRegistry.getRegistry();
 			} catch (RemoteException e) {
-				clientLogger.error("Cannot create RMI registry", e);
-				System.err.println("Cannot create RMI registry!");
 				e.printStackTrace();
 			}
 		}
@@ -515,6 +507,21 @@ public class RecoverySystem extends Client implements IRecoverySys {
 			System.err.println("Cannot register recovery service in registry!");
 			e.printStackTrace();
 		}
+	}
+	
+	@Override
+	public void shutdown() throws ClientException {	
+		try {
+			UnicastRemoteObject.unexportObject(this, true);
+			registry.unbind("RecoverySystem");
+		} catch (RemoteException e) {
+			clientLogger.error("Cannot unregister recovery service in registry", e);
+			e.printStackTrace();
+		} catch (NotBoundException e) {
+			clientLogger.error("Cannot unregister recovery service in registry", e);
+			e.printStackTrace();
+		}
+		super.shutdown();	
 	}
 
 	public static void main(String[] args) throws ClientException,
