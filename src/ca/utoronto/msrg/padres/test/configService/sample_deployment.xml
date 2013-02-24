@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<config>
+<topology>
+	 <broker name="broker1">
+	     <type>rmi</type>
+	     <params>
+	         <param name="rl" value="50" />
+	     </params> 
+	     <host>127.0.0.1</host> 
+	     <port>5555</port>
+	     <username>p00ya</username>
+	     <password></password>
+	     <neighbours>
+	         <neighbour>broker2</neighbour>
+	         <neighbour>broker3</neighbour>
+	     </neighbours>
+     </broker>
+     <broker name="broker2">
+	     <type>rmi</type>
+	     <params>
+	     </params> 
+	     <host>127.0.0.1</host> 
+	     <port>5556</port>
+	     <username>p00ya</username>
+	     <password></password>
+     </broker>
+	 <broker name="broker3">
+	     <type>rmi</type> 
+	     <host>127.0.0.1</host> 
+	     <port>5557</port>
+	     <username>p00ya</username>
+	     <password></password>
+	     <neighbours>
+		 	<neighbour>broker2</neighbour>
+	     </neighbours>
+     </broker>
+</topology>	     
+<backup>
+    <node>
+         <host>188.193.161.115</host> 
+	     <port>5522</port>
+	     <username>chris</username>
+	     <password>11pass123</password>
+    </node>
+    <node>
+         <host>188.193.161.115</host> 
+	     <port>5522</port>
+	     <username>chris</username>
+	     <password></password>
+    </node>
+</backup>
+</config>

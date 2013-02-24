@@ -2,6 +2,7 @@ package ca.utoronto.msrg.padres.configService;
 
 import java.io.ByteArrayOutputStream;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.bind.JAXBContext;
@@ -12,19 +13,18 @@ import ca.utoronto.msrg.padres.configService.schema.*;
 
 import com.jcraft.jsch.*;
 
-/*
- * TO DO:
- * 
- * - create -n parameter
- */
-
 public class SSHConnection {
+	
+	public SSHConnection(Config conf)
+	{
+		config = conf;
+	}
 	
 	public void startBroker(Broker broker) throws RemoteExecutionException
 	{
 		String command = createStartBrokerCommand(broker);
 		System.out.println("Starting broker " + broker.getUsername() + "@" + broker.getHost());
-		int exitCode = executeCommand(command, broker);
+		exitCode = executeCommand(command, broker);
 		if(outputStream.size() > 0)
 			 System.out.println(outputStream.toString());
 		if(errorStream.size() > 0)
@@ -36,7 +36,7 @@ public class SSHConnection {
 	{
 		String command = createStopBrokerCommand(broker);
 		System.out.println("Stoping broker " + broker.getUsername() + "@" + broker.getHost());
-		int exitCode = executeCommand(command, broker);
+		exitCode = executeCommand(command, broker);
 		if(outputStream.size() > 0)
 			 System.out.println(outputStream.toString());
 		if(errorStream.size() > 0)
@@ -48,7 +48,7 @@ public class SSHConnection {
 	{
 		outputStream = new ByteArrayOutputStream();
 		errorStream = new ByteArrayOutputStream();
-		int exitCode;
+		int res;
 		JSch jsch = new JSch();
 		try {
 			Session session= jsch.getSession(broker.getUsername(), broker.getHost(), 22);
@@ -69,7 +69,7 @@ public class SSHConnection {
 			 }
 			channel.disconnect();
 			session.disconnect();
-			exitCode = channel.getExitStatus();
+			res = channel.getExitStatus();
 		} catch (JSchException e) {
 			RemoteExecutionException exception = new RemoteExecutionException(e.getMessage());
 			exception.setStackTrace(e.getStackTrace());
@@ -80,7 +80,7 @@ public class SSHConnection {
 			throw exception;
 		}
 		
-		return exitCode;
+		return res;
 	}
 	
 	public void restartBroker(Broker broker) throws RemoteExecutionException
@@ -94,13 +94,29 @@ public class SSHConnection {
 		String command = "startbroker -uri " + broker.getType() + "://" 
 						+ broker.getHost() + ":" + broker.getPort() 
 						+ "/" + broker.getName() + " ";
-		List<String> neighbours = broker.getNeighbours().getNeighbour(); 
-		if(neighbours != null && !neighbours.isEmpty())
-			command += "-n";
 		
-		if(broker.getParams() != null && broker.getParams().getParam() != null)
+		//construct neighbour list
+		if(broker.getNeighbours() != null && 
+		   broker.getNeighbours().getNeighbour() != null && 
+		   !broker.getNeighbours().getNeighbour().isEmpty())
+		{
+			command += "-n ";
+			List<Broker> neighbourList = getNeighbours(broker);
+			for(Broker b: neighbourList)
+			{
+				command += b.getType() + "://" + b.getHost() + ":" + b.getPort() + "/" + b.getName();
+				if(b != neighbourList.get(neighbourList.size() - 1))
+					command += ",";
+			}
+		}
+		
+		if(broker.getParams() != null && broker.getParams().getParam() != null && 
+		   !broker.getParams().getParam().isEmpty())
+		{
+			command += " ";
 			for(Param p : broker.getParams().getParam())
 				command += "-" + p.getName() + " " + p.getValue() + " ";
+		}
 		
 		return command;
 	}
@@ -126,6 +142,25 @@ public class SSHConnection {
 		return "";
 	}
 	
+	public int getExitCode()
+	{
+		return exitCode;
+	}
+	
+	private List<Broker> getNeighbours(Broker broker)
+	{
+		List<Broker> neighbours = new ArrayList<Broker>();
+		
+		for(String neighbour: broker.getNeighbours().getNeighbour())
+			for(Broker b: config.getTopology().getBroker())
+				if(b.getName().equals(neighbour))
+					neighbours.add(b);
+		
+		return neighbours;
+	}
+	
 	private ByteArrayOutputStream outputStream = null;
 	private ByteArrayOutputStream errorStream = null;
+	private int exitCode = -1;
+	private Config config = null;
 }
