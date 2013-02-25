@@ -1,25 +1,14 @@
 package ca.utoronto.msrg.padres.configService;
 
-import java.io.File;
 import java.io.Serializable;
-import java.rmi.AccessException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
-
-import org.apache.log4j.Logger;
 
 import ca.utoronto.msrg.padres.broker.brokercore.BrokerCore;
 import ca.utoronto.msrg.padres.broker.brokercore.BrokerCoreException;
@@ -27,7 +16,6 @@ import ca.utoronto.msrg.padres.broker.brokercore.HeartbeatSubscriber;
 import ca.utoronto.msrg.padres.client.Client;
 import ca.utoronto.msrg.padres.client.ClientException;
 import ca.utoronto.msrg.padres.common.message.Message;
-import ca.utoronto.msrg.padres.common.message.MessageDestination;
 import ca.utoronto.msrg.padres.common.message.Publication;
 import ca.utoronto.msrg.padres.common.message.PublicationMessage;
 import ca.utoronto.msrg.padres.common.message.parser.MessageFactory;
@@ -50,36 +38,9 @@ public class RecoverySystem extends Client implements IRecoverySys {
 	// stub of clients
 	private List<CSClient> registeredClients = new ArrayList<CSClient>();
 
-	// default configurations
-	public static final String DIR_SLASH = System.getProperty("file.separator");
-	public static final String PADRES_HOME = System.getenv("PADRES_HOME") == null ? "."
-			+ File.separator : System.getenv("PADRES_HOME") + File.separator;
-	// deployment file location
-	public static final String DEPLOYMENT_FILE = String.format("%s%setc%sdeployment.xml",
-			PADRES_HOME, File.separator, File.separator);
-	
 	public static boolean DEBUG = false; 
 	public static void isDebug(boolean mode){
 		DEBUG = mode;
-	}
-
-	/**
-	 * 
-	 * Constructor. It loads default deployment file and gets the first broker
-	 * from the list. Resets the counter of the used backup nodes.
-	 * 
-	 * @param id - recovery system identifier
-	 * @throws ClientException
-	 * @throws ParseException
-	 * @throws JAXBException
-	 */
-	public RecoverySystem(String id) throws ClientException, JAXBException{
-		super(id);
-
-		this.config = loadDeploymentFile();
-		this.brokerURI = getBrokerToConnect(config, 0);
-		this.remoteExec = new SSHConnection();
-		usedBackupNodes = 0;
 	}
 
 	/**
@@ -93,11 +54,11 @@ public class RecoverySystem extends Client implements IRecoverySys {
 	 * @throws ClientException
 	 * @throws ParseException
 	 */
-	public RecoverySystem(String id, Config config, SSHConnection remoteExec) throws ClientException {
+	public RecoverySystem(String id, Config config) throws ClientException {
 		super(id);
 		
 		this.config = config;
-		this.remoteExec = remoteExec;
+		remoteExec = new SSHConnection(config);
 		usedBackupNodes = 0;
 		this.brokerURI = getBrokerToConnect(config, 0);
 	}
@@ -111,37 +72,25 @@ public class RecoverySystem extends Client implements IRecoverySys {
 	 * @throws ClientException
 	 * @throws ParseException
 	 */
-	public void initialize() throws ClientException, ParseException{
+	public void initialize(){
 		exportToRegistry();
-		connect(brokerURI);
-		publishGlobalFD(true);
-		subscribeToHeartbeats();
+		try {
+			connect(brokerURI);
+			publishGlobalFD(true);
+			subscribeToHeartbeats();
+			
+			initLog("recoverySystem");
+		} catch (ClientException e1) {
+			System.err.println("Cannot initialize Recovery System");
+			e1.printStackTrace();
+			System.exit(1);
+		} catch (ParseException e) {
+			System.err.println("Cannot initialize Recovery System");
+			e.printStackTrace();
+			System.exit(1);
+		}
 		
-		initLog("recoverySystem");
 		System.out.println("RecoverySystem has started...");
-	}
-
-	/**
-	 * 
-	 * Loads default XML deployment file with the topology and then using 
-	 * JAXB maps it to the Java representation
-	 * 
-	 * @return  
-	 * @throws JAXBException
-	 */
-	private Config loadDeploymentFile() throws JAXBException {
-		File file = new File(getDeploymentFile());
-		JAXBContext jaxbContext = JAXBContext.newInstance(Config.class);
-
-		Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-		return (Config) jaxbUnmarshaller.unmarshal(file);
-	}
-
-	/**
-	 * @return default deployment file
-	 */
-	private String getDeploymentFile() {
-		return DEPLOYMENT_FILE;
 	}
 
 	/**
@@ -522,12 +471,6 @@ public class RecoverySystem extends Client implements IRecoverySys {
 			e.printStackTrace();
 		}
 		super.shutdown();	
-	}
-
-	public static void main(String[] args) throws ClientException,
-			ParseException, JAXBException {
-		RecoverySystem rs = new RecoverySystem("recoverySystem");
-		rs.initialize();
 	}
 
 }

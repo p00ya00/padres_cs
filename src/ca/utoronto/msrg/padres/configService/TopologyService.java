@@ -32,7 +32,7 @@ public class TopologyService {
 		}
 		
 		//start brokers
-		SSHConnection ssh = new SSHConnection();
+		SSHConnection ssh = new SSHConnection(config);
 		for(Broker broker: config.getTopology().getBroker())
 		{
 			try {
@@ -44,12 +44,12 @@ public class TopologyService {
 		}		
 		
 		try {
-			RecoverySystem es = new RecoverySystem("recoverySystem", config, ssh);
+			RecoverySystem es = new RecoverySystem("recoverySystem", config);
 			es.initialize();
 		} catch (ClientException e) {
+			System.err.println("Cannot initialize Recovery System");
 			e.printStackTrace();
-		} catch (ParseException e) {
-			e.printStackTrace();
+			System.exit(1);
 		}		
 	}
 }

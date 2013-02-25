@@ -105,8 +105,7 @@ public class TestRecoverySystem {
 		config.setBackup(backup);
 
 		RecoverySystem.isDebug(true);
-		recSys = new RecoverySystem("recoverySystem", config,
-				new SSHConnection());
+		recSys = new RecoverySystem("recoverySystem", config);
 		
 //		for(Broker broker : config.getTopology().getBroker()){
 //			System.out.println("Broker: "+recSys.createStartCommand(broker));
