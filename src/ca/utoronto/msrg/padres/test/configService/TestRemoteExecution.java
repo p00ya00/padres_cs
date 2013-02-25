@@ -25,6 +25,10 @@ import ca.utoronto.msrg.padres.client.*;
 import ca.utoronto.msrg.padres.test.junit.MessageWatchAppender;
 import ca.utoronto.msrg.padres.test.junit.PatternFilter;
 
+/*
+ *  before running these tests, username, password and hosts
+ *  should be changed
+ */
 /* sample deployment file:
  
  <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -185,6 +189,10 @@ public class TestRemoteExecution {
 		ssh.startBroker(b);
 	}
 	
+	/*
+	 * start brokers using ssh, connect clients to them and 
+	 * verify that the network topology is functioning
+	 */
 	@Test
 	public void testTopology()
 	{

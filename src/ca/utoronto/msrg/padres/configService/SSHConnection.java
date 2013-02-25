@@ -13,13 +13,33 @@ import ca.utoronto.msrg.padres.configService.schema.*;
 
 import com.jcraft.jsch.*;
 
+/**
+ * This class implements an ssh connection. It recieves the unmarshaled 
+ * deployment configuration. It can be used to start/stop brokers on
+ * remote machines and getting back exit code and output of the execution 
+ */
 public class SSHConnection {
 	
+	/**
+	 * constructor
+	 * 
+	 * @param conf : the unmarshaled deployment file
+	 */
 	public SSHConnection(Config conf)
 	{
 		config = conf;
 	}
 	
+	/**
+	 * starts the given broker on the remote host specified in the 
+	 * broker configuration. upon execution, exit code, output and error
+	 * output(if any) can be retrieved using the provided methods.
+	 * 
+	 * @param broker : broker to be started on remote host
+	 * 
+	 * @throws RemoteExecutionException: if cannot start broker or remote host
+	 * doesn't respond.
+	 */
 	public void startBroker(Broker broker) throws RemoteExecutionException
 	{
 		String command = createStartBrokerCommand(broker);
@@ -32,6 +52,15 @@ public class SSHConnection {
 		System.out.println("exit-status: " + exitCode);
 	}
 	
+	/**
+	 * Stops the given broker on the host that it runs on.
+	 * 
+	 * @param broker : broker to be stoped. upon execution, exit code, 
+	 * output and error output(if any) can be retrieved using the provided methods.
+	 * 
+	 * @throws RemoteExecutionException: if cannot start broker or remote host
+	 * doesn't respond.
+	 */
 	public void stopBroker(Broker broker) throws RemoteExecutionException
 	{
 		String command = createStopBrokerCommand(broker);
@@ -42,6 +71,19 @@ public class SSHConnection {
 		if(errorStream.size() > 0)
 		 	System.out.println("Stoping broker failed!\n" + errorStream.toString());
 		System.out.println("exit-status: " + exitCode);
+	}
+	
+	/**
+	 * stop and restart the given broker
+	 * 
+	 * @param broker
+	 * @throws RemoteExecutionException
+	 */
+	
+	public void restartBroker(Broker broker) throws RemoteExecutionException
+	{
+		stopBroker(broker);
+		startBroker(broker);
 	}
 	
 	protected int executeCommand(String command, Broker broker) throws RemoteExecutionException
@@ -81,12 +123,6 @@ public class SSHConnection {
 		}
 		
 		return res;
-	}
-	
-	public void restartBroker(Broker broker) throws RemoteExecutionException
-	{
-		stopBroker(broker);
-		startBroker(broker);
 	}
 
 	public String createStartBrokerCommand(Broker broker)
@@ -128,6 +164,10 @@ public class SSHConnection {
 		return command;
 	}
 	
+	/**
+	 * returns the output(System.out) result of the last executed command 
+	 * @return: 
+	 */
 	public String getExecutionOutput()
 	{
 		if(outputStream != null && outputStream.size() > 0)
@@ -135,6 +175,10 @@ public class SSHConnection {
 		return "";
 	}
 	
+	/**
+	 * returns the error output(System.err) result of the last executed command
+	 * @return
+	 */
 	public String getExecutionErrorOutput()
 	{
 		if(errorStream != null && errorStream.size() > 0)
@@ -142,6 +186,12 @@ public class SSHConnection {
 		return "";
 	}
 	
+	/**
+	 * returns the exit code resulted from the last executed command.
+	 * -1 if no command executed yet through this connection or command
+	 * not finished yet
+	 * @return
+	 */
 	public int getExitCode()
 	{
 		return exitCode;

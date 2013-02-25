@@ -6,11 +6,18 @@ import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
 import ca.utoronto.msrg.padres.client.ClientException;
-import ca.utoronto.msrg.padres.common.message.parser.ParseException;
 import ca.utoronto.msrg.padres.configService.SSHConnection;
 import ca.utoronto.msrg.padres.configService.schema.*;
 
+/**
+ * This class implements the network topology deployment. The configuration
+ * file is read and brokers are started on the remote machine using the
+ * SSHConnection functionality
+ */
 public class TopologyService {
+	/**
+	 * @param args : path to the xml configuration file
+	 */
 	public static void main(String[] args) {
 		if(args.length == 0)
 		{
@@ -43,6 +50,10 @@ public class TopologyService {
 			}
 		}		
 		
+		/*
+		 * start the recovery system.
+		 * The recovery system can be an standalone program itself!
+		 */
 		try {
 			RecoverySystem es = new RecoverySystem("recoverySystem", config);
 			es.initialize();
