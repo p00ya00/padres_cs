@@ -9,7 +9,7 @@
 	     <host>127.0.0.1</host> 
 	     <port>5555</port>
 	     <username>p00ya</username>
-	     <password>papoola874</password>
+	     <password></password>
 	     <neighbours>
 	         <neighbour>broker2</neighbour>
 	         <neighbour>broker3</neighbour>
@@ -22,14 +22,14 @@
 	     <host>127.0.0.1</host> 
 	     <port>5556</port>
 	     <username>p00ya</username>
-	     <password>papoola874</password>
+	     <password></password>
      </broker>
 	 <broker name="broker3">
 	     <type>rmi</type> 
 	     <host>127.0.0.1</host> 
 	     <port>5557</port>
 	     <username>p00ya</username>
-	     <password>papoola874</password>
+	     <password></password>
 	     <neighbours>
 		 	<neighbour>broker2</neighbour>
 	     </neighbours>

@@ -211,19 +211,22 @@ public class TestRemoteExecution {
 		}
 		assertEquals(client1.isConnected(), true);
 		assertEquals(client2.isConnected(), true);
-/*		
 		try {
-			Advertisement adv = MessageFactory.createAdvertisementFromString("[class,eq,'stock'],[price,=,100.3]");
-			client1.advertise(adv, c1bURI);
-			Subscription sub = MessageFactory.createSubscriptionFromString("[class,eq,'stock'],[price,=,100.3]");
-			client2.subscribe(sub, c2bURI);
-			Publication pub = MessageFactory.createPublicationFromString("[class,'stock'],[price,100.3]");
-			client1.publish(pub, c1bURI);
 			MessageWatchAppender messageWatcher = new MessageWatchAppender();
 			PatternFilter msgFilter = new PatternFilter(Client.class.getName());
 			msgFilter.setPattern(".*Client " + client1.getClientID() + ".+Publication.+stock.+");
 			messageWatcher.addFilter(msgFilter);
+			
+			Advertisement adv = MessageFactory.createAdvertisementFromString("[class,eq,'stock'],[price,=,100.3]");
+			client1.advertise(adv, c1bURI);
+			Subscription sub = MessageFactory.createSubscriptionFromString("[class,eq,'stock'],[price,=,100.3]");
+			client2.subscribe(sub, c2bURI);
+			
 			messageWatcher.getMessage();
+			
+			Publication pub = MessageFactory.createPublicationFromString("[class,'stock'],[price,100.3]");
+			client1.publish(pub, c1bURI);
+			
 			Publication expectedPub = client1.getCurrentPub();
 			assertEquals(pub.equalVals(expectedPub), true);
 		} catch (ParseException e) {
@@ -231,7 +234,6 @@ public class TestRemoteExecution {
 		} catch (ClientException e) {
 			e.printStackTrace();
 		}
-*/
 	}
 	
 	private static Config config = null;
