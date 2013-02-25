@@ -211,29 +211,35 @@ public class TestRemoteExecution {
 		}
 		assertEquals(client1.isConnected(), true);
 		assertEquals(client2.isConnected(), true);
-//		try {
-//			MessageWatchAppender messageWatcher = new MessageWatchAppender();
-//			PatternFilter msgFilter = new PatternFilter(Client.class.getName());
-//			msgFilter.setPattern(".*Client " + client1.getClientID() + ".+Publication.+stock.+");
-//			messageWatcher.addFilter(msgFilter);
-//			
-//			Advertisement adv = MessageFactory.createAdvertisementFromString("[class,eq,'stock'],[price,=,100.3]");
-//			client1.advertise(adv, c1bURI);
-//			Subscription sub = MessageFactory.createSubscriptionFromString("[class,eq,'stock'],[price,=,100.3]");
-//			client2.subscribe(sub, c2bURI);
-//			
-//			messageWatcher.getMessage();
-//			
-//			Publication pub = MessageFactory.createPublicationFromString("[class,'stock'],[price,100.3]");
-//			client1.publish(pub, c1bURI);
-//			
-//			Publication expectedPub = client1.getCurrentPub();
-//			assertEquals(pub.equalVals(expectedPub), true);
-//		} catch (ParseException e) {
-//			e.printStackTrace();
-//		} catch (ClientException e) {
-//			e.printStackTrace();
-//		}
+		try {
+			MessageWatchAppender messageWatcher = new MessageWatchAppender();
+			PatternFilter msgFilter = new PatternFilter(Client.class.getName());
+			msgFilter.setPattern(".*Client " + client1.getClientID() + ".+Publication.+stock.+");
+			messageWatcher.addFilter(msgFilter);
+			
+			client1.advertise(MessageFactory
+					.createAdvertisementFromString("[class,eq,'stock'],[price,<,100]"));
+			client2.subscribe(MessageFactory
+					.createSubscriptionFromString("[class,eq,'stock'],[price,<,50]"));
+			messageWatcher.getMessage();
+			client1.publish(MessageFactory
+					.createPublicationFromString("[class,'stock'],[price,20]"));
+
+			Publication pub = MessageFactory
+					.createPublicationFromString("[class,'stock'],[price,20]");
+
+			// waiting for the message to be received
+			messageWatcher.getMessage();
+			
+			Publication expectedPub = client2.getCurrentPub();
+			assertTrue(
+					"The publication: [class,'stock'],[price,20] should be matched at clientB",
+					expectedPub.equalVals(pub));
+		} catch (ParseException e) {
+			e.printStackTrace();
+		} catch (ClientException e) {
+			e.printStackTrace();
+		}
 	}
 	
 	private static Config config = null;
