@@ -3,6 +3,7 @@ package ca.utoronto.msrg.padres.test.configService;
 import static org.junit.Assert.*;
 
 import java.io.File;
+import java.util.List;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -12,9 +13,17 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import ca.utoronto.msrg.padres.common.message.Advertisement;
+import ca.utoronto.msrg.padres.common.message.MessageDestination;
+import ca.utoronto.msrg.padres.common.message.Publication;
+import ca.utoronto.msrg.padres.common.message.Subscription;
+import ca.utoronto.msrg.padres.common.message.parser.MessageFactory;
+import ca.utoronto.msrg.padres.common.message.parser.ParseException;
 import ca.utoronto.msrg.padres.configService.*;
 import ca.utoronto.msrg.padres.configService.schema.*;
 import ca.utoronto.msrg.padres.client.*;
+import ca.utoronto.msrg.padres.test.junit.MessageWatchAppender;
+import ca.utoronto.msrg.padres.test.junit.PatternFilter;
 
 /* sample deployment file:
  
@@ -166,10 +175,63 @@ public class TestRemoteExecution {
 	@Test(expected=RemoteExecutionException.class)
 	public void testStartBrokerFail() throws RemoteExecutionException
 	{
-		Broker b = config.getTopology().getBroker().get(0);
-		//change broker address so it will fail!
+		Broker b = new Broker();
+		b.setPort(8888);
 		b.setHost("123.456.78.9");
+		b.setName("fakeBroker");
+		b.setType("rmi");
+		b.setPassword("123456");
+		b.setUsername("admin");
 		ssh.startBroker(b);
+	}
+	
+	@Test
+	public void testTopology()
+	{
+		List<Broker> brokers = config.getTopology().getBroker();
+		for(Broker b: brokers)
+			try {
+				ssh.startBroker(b);
+			} catch (RemoteExecutionException e) {
+				e.printStackTrace();
+				assertTrue("Test failed. Cannot start " + b.getName(), false);
+			}
+		Client client1 = null, client2 = null;
+		Broker c1b = brokers.get(0);
+		Broker c2b = brokers.get(1);
+		String c1bURI = c1b.getType() + "://" + c1b.getHost() + ":" + c1b.getPort() + "/" + c1b.getName();
+		String c2bURI = c2b.getType() + "://" + c2b.getHost() + ":" + c2b.getPort() + "/" + c2b.getName();
+		try {
+			client1 = new Client("client1");
+			client2 = new Client("client2");
+			client1.connect(c1bURI);
+			client2.connect(c2bURI);
+		} catch (ClientException e) {
+			e.printStackTrace();
+		}
+		assertEquals(client1.isConnected(), true);
+		assertEquals(client2.isConnected(), true);
+/*		
+		try {
+			Advertisement adv = MessageFactory.createAdvertisementFromString("[class,eq,'stock'],[price,=,100.3]");
+			client1.advertise(adv, c1bURI);
+			Subscription sub = MessageFactory.createSubscriptionFromString("[class,eq,'stock'],[price,=,100.3]");
+			client2.subscribe(sub, c2bURI);
+			Publication pub = MessageFactory.createPublicationFromString("[class,'stock'],[price,100.3]");
+			client1.publish(pub, c1bURI);
+			MessageWatchAppender messageWatcher = new MessageWatchAppender();
+			PatternFilter msgFilter = new PatternFilter(Client.class.getName());
+			msgFilter.setPattern(".*Client " + client1.getClientID() + ".+Publication.+stock.+");
+			messageWatcher.addFilter(msgFilter);
+			messageWatcher.getMessage();
+			Publication expectedPub = client1.getCurrentPub();
+			assertEquals(pub.equalVals(expectedPub), true);
+		} catch (ParseException e) {
+			e.printStackTrace();
+		} catch (ClientException e) {
+			e.printStackTrace();
+		}
+*/
 	}
 	
 	private static Config config = null;
