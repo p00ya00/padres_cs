@@ -6,9 +6,7 @@ import java.net.InetAddress;
 import java.util.Iterator;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import ca.utoronto.msrg.padres.broker.brokercore.BrokerCore;
@@ -23,7 +21,6 @@ import ca.utoronto.msrg.padres.common.message.parser.MessageFactory;
 import ca.utoronto.msrg.padres.common.message.parser.ParseException;
 import ca.utoronto.msrg.padres.configService.CSClientImpl;
 import ca.utoronto.msrg.padres.configService.RecoverySystem;
-import ca.utoronto.msrg.padres.configService.SSHConnection;
 import ca.utoronto.msrg.padres.configService.schema.Backup;
 import ca.utoronto.msrg.padres.configService.schema.Broker;
 import ca.utoronto.msrg.padres.configService.schema.Config;
@@ -99,17 +96,13 @@ public class TestRecoverySystem {
 		
 		Node node3 = new Node();
 		node3.setHost(hostAddress);
-		node3.setPort(5007);
+		node3.setPort(5008);
 		backup.getNode().add(node3);
 		
 		config.setBackup(backup);
 
 		RecoverySystem.isDebug(true);
 		recSys = new RecoverySystem("recoverySystem", config);
-		
-//		for(Broker broker : config.getTopology().getBroker()){
-//			System.out.println("Broker: "+recSys.createStartCommand(broker));
-//		}
 
 		// start brokers
 		broker = config.getTopology().getBroker().get(0);
@@ -154,14 +147,6 @@ public class TestRecoverySystem {
 		broker4.shutdown();
 		broker5.shutdown();
 	}
-	
-//	@After
-//	public void restartClientB() throws ClientException{
-//		if(!clientB.isConnected()){
-//			clientB = new CSClientImpl("ClientB");
-//			clientB.connect(broker3.getBrokerURI());
-//		}
-//	}
 
 	@Test
 	public void testBrokersCorrectlyConnected() throws Exception {
@@ -206,9 +191,6 @@ public class TestRecoverySystem {
 				.createAdvertisementFromString("[class,eq,'stock'],[price,=,100]");
 		Advertisement adv2 = MessageFactory
 				.createAdvertisementFromString("[class,eq,'stock'],[price,=,200]");
-		
-//		clientA.getAdvertisements().clear();
-//		clientB.getAdvertisements().clear();
 
 		clientA.advertise(adv1);
 		clientB.advertise(adv2);
@@ -237,9 +219,6 @@ public class TestRecoverySystem {
 				.createSubscriptionFromString("[class,eq,'stock'],[price,=,100]");
 		Subscription sub2 = MessageFactory
 				.createSubscriptionFromString("[class,eq,'stock'],[price,=,200]");
-		
-//		clientA.getSubscriptions().clear();
-//		clientB.getSubscriptions().clear();
 
 		clientA.subscribe(sub1);
 		clientB.subscribe(sub2);
