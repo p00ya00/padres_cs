@@ -277,8 +277,7 @@ public class RecoverySystem extends Client implements IRecoverySys {
 			pub = ((PublicationMessage) msg).getPublication();
 			header = pub.getPairMap();
 			msgType = header.get("class").toString();
-//			System.out.println("got message: "+msg);
-
+			
 			// heartbeat failure message has arrived
 			if (msgType.equals(HeartbeatSubscriber.MESSAGE_CLASS)) {
 				// ID of the failed broker
@@ -346,6 +345,12 @@ public class RecoverySystem extends Client implements IRecoverySys {
 		}
 	}
 	
+	/**
+	 * 
+	 * Start BrokerCore with the provided parameters
+	 * 
+	 * @param broker
+	 */
 	private void startBrokerLocally(Broker broker){
 		BrokerCore brokerCore;
 		System.out.println("Starting "+getBrokerURI(broker));
@@ -461,8 +466,8 @@ public class RecoverySystem extends Client implements IRecoverySys {
 	@Override
 	public void shutdown() throws ClientException {	
 		try {
-			UnicastRemoteObject.unexportObject(this, true);
 			registry.unbind("RecoverySystem");
+			UnicastRemoteObject.unexportObject(this, true);			
 		} catch (RemoteException e) {
 			clientLogger.error("Cannot unregister recovery service in registry", e);
 			e.printStackTrace();
